@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creature Wars</title>
+ 
+  <style>
+    body {
+      background: midnightblue;
+      font-family: Arial;
+      text-align: center;
+      color: white;
+    }
+    h1 {
+      color: gold;
+      font-size: 45px;
+    }
+    h2 {
+      color: aqua;
+    }
+    img {
+      border-radius: 20px;
+      border: 5px solid gold;
+      background: white;
+      width: 200px;
+    }
+    input {
+      padding: 6px;
+      font-size: 16px;
+      text-align: center;
+      border-radius: 6px;
+      border: none;
+      width: 150px;
+      margin: 5px;
+    }
+    button {
+      background: purple;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 18px;
+      border: none;
+      margin: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: magenta;
+    }
+    .card {
+      display: inline-block;
+      margin: 20px;
+      padding: 15px;
+      border-radius: 15px;
+      background: black;
+      width: 250px;
+    }
+    .log {
+      background: black;
+      margin: 20px auto;
+      padding: 15px;
+      border-radius: 15px;
+      width: 500px;
+      height: 150px;
+      overflow: auto;
+      text-align: center;
+    }
+    #battle {
+      display: none;
+    }
+  </style>
+ 
+</head>
+<body>
+  <h1>Creature Wars</h1>
+  <h1>A game made by Malcolm W-T</h1>
+  <div id="setup">
+    <h2>Build Your Creature</h2>
+    <input id="nameBox" type="text" placeholder="Name Your Creature!" oninput="updatePreview()">
+    <p>Spend 100 Points</p>
+
+    <p>
+      Health:
+      <input id="healthBox" type="number" value="60" min="1">
+    </p>
+
+    <p>
+      Attack:
+      <input id="attackBox" type="number" value="25" min="1">
+    </p>
+
+    <p>
+      Healing:
+      <input id="healBox" type="number" value="15" min="1">
+    </p>
+
+    <img id="previewPic" src="https://robohash.org/1?set=set2&size=200x200">
+
+    <p>
+      <button onclick="rerollLook()">Different Look</button>
+    </p>
+
+    <button onclick="startBattle()">Start Battle!</button>
+
+    <p id="warning"></p>
+  </div>
+
+  <div id="battle">
+
+    <div class="card">
+      <h2 id="playerName">You</h2>
+      <img id="playerPic" src="">
+
+      <p>
+        Health:
+        <span id="playerHP">0</span>
+      </p>
+
+      <p>
+        Attack:
+        <span id="playerAtk">0</span>
+      </p>
+
+      <p>
+        Heal:
+        <span id="playerHeals">0</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 id="enemyName">Enemy</h2>
+      <img id="enemyPic" src="">
+
+      <p>
+        Health:
+        <span id="enemyHP">0</span>
+      </p>
+
+      <p>
+        Attack:
+        <span id="enemyAtk">0</span>
+      </p>
+
+      <p>
+        Heal:
+        <span id="enemyHeal">0</span>
+      </p>
+    </div>
+
+    <div>
+      <button onclick="playerAttack()">Attack!</button>
+      <button onclick="playerHeal()">Heal!</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <button onclick="newGame()">New Battle?</button>
+  </div>
+
+  <script>
+
+    let playerName = "";
+    let playerHP = 0;
+    let playerMaxHP = 0;
+    let playerHeals = 0;
+    let playerATK = 0;
+   
+    let enemyName = "";
+    let enemyHP = 0;
+    let enemyMaxHP = 0;
+    let enemyHeal = 0;
+    let enemyATK = 0;
+   
+    let gameOver = false;
+    let lookNumber = 1;
+
+    function playerPicture() {
+      let word = document.getElementById("nameBox").value;
+      return "https://robohash.org/" + word + lookNumber + "?set=set2&size=200x200";
+    }
+   
+    function updatePreview() {
+      document.getElementById("previewPic").src = playerPicture();
+    }
+
+    function rerollLook() {
+      lookNumber = lookNumber + 1;
+      updatePreview();
+    }
+
+    function startBattle() {
+      playerName = document.getElementById("nameBox").value;
+      playerHP = Number(document.getElementById("healthBox").value);
+      playerATK = Number(document.getElementById("attackBox").value);
+      playerHeals = Number(document.getElementById("healBox").value);
+
+      let total = playerHP + playerATK + playerHeals;
+
+      if (total > 100) {
+        document.getElementById("warning").innerHTML =
+          "No, no, no buckaroo! You used too many pionts! You used " +
+          total +
+          " outa one hundo!";
+        return;
+      }
+
+      if (playerName === "") {
+        document.getElementById("warning").innerHTML =
+          "Give your creature a name first!";
+        return;
+      }
+
+      playerMaxHP = playerHP;
+
+      makeEnemy();
+
+      document.getElementById("playerName").innerHTML = playerName;
+      document.getElementById("playerPic").src = playerPicture();
+
+      document.getElementById("enemyName").innerHTML = enemyName;
+      document.getElementById("enemyPic").src =
+        "https://robohash.org/" + enemyName + "?set=set2&size=200x200";
+
+      document.getElementById("setup").style.display = "none";
+      document.getElementById("battle").style.display = "block";
+
+      gameOver = false;
+
+      document.getElementById("log").innerHTML = "";
+
+      addLog(enemyName + " appears! The battle begins.");
+
+      updateStats();
+    }
+
+    function makeEnemy() {
+      enemyName = "Enemy" + Math.floor(Math.random() * 10000);
+      enemyHP = Math.floor(Math.random() * 31) + 40;
+      enemyATK = Math.floor(Math.random() * 16) + 10;
+      enemyHeal = 100 - enemyHP - enemyATK;
+      enemyMaxHP = enemyHP;
+    }
+
+    function updateStats() {
+      document.getElementById("playerHP").innerHTML =
+        playerHP + "/" + playerMaxHP;
+
+      document.getElementById("playerAtk").innerHTML = playerATK;
+      document.getElementById("playerHeals").innerHTML = playerHeals;
+
+      document.getElementById("enemyHP").innerHTML =
+        enemyHP + "/" + enemyMaxHP;
+
+      document.getElementById("enemyAtk").innerHTML = enemyATK;
+      document.getElementById("enemyHeal").innerHTML = enemyHeal;
+    }
+
+    function addLog(text) {
+      document.getElementById("log").innerHTML =
+        document.getElementById("log").innerHTML +
+        "<p>" + text + "</p>";
+    }
+
+    function playerAttack() {
+      if (gameOver) {
+        return;
+      }
+
+      enemyHP = enemyHP - playerATK;
+
+      addLog(playerName + " attacks for " + playerATK + " damage!");
+
+      checkWinner();
+
+      if (gameOver === false) {
+        enemyTurn();
+      }
+
+      updateStats();
+    }
+
+    function playerHeal() {
+      if (gameOver) {
+        return;
+      }
+
+      playerHP = playerHP + playerHeals;
+
+      if (playerHP > playerMaxHP) {
+        playerHP = playerMaxHP;
+      }
+
+      addLog(playerName + " heals for " + playerHeals + " health!");
+
+      enemyTurn();
+
+      updateStats();
+    }
+
+    function enemyTurn() {
+      let choice = Math.floor(Math.random() * 2);
+
+      if (choice === 0) {
+        playerHP = playerHP - enemyATK;
+
+        addLog(enemyName + " attacks for " + enemyATK + " damage!");
+      } else {
+        enemyHP = enemyHP + enemyHeal;
+
+        if (enemyHP > enemyMaxHP) {
+          enemyHP = enemyMaxHP;
+        }
+
+        addLog(enemyName + " heals for " + enemyHeal + " health!");
+      }
+
+      checkWinner();
+
+    }
+
+    function checkWinner() {
+      if (enemyHP <= 0) {
+        enemyHP = 0;
+        gameOver = true;
+        addLog(playerName + " WINS!");
+      }
+
+      if (playerHP <= 0) {
+        playerHP = 0;
+        gameOver = true;
+        addLog(enemyName + " WINS!");
+      }
+    }
+
+    function newGame() {
+      document.getElementById("setup").style.display = "block";
+      document.getElementById("battle").style.display = "none";
+      document.getElementById("warning").innerHTML = "";
+    }
+
+  </script>
+
+</body>
+</html>
+
+On Fri, Jul 24, 2026 at 1:59 PM Malcolm Wheeler-Tom <mwheelertom2601@student.stcc.edu> wrote:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creature Wars</title>
+ 
+  <style>
+    body {
+      background: midnightblue;
+      font-family: Arial;
+      text-align: center;
+      color: white;
+    }
+    h1 {
+      color: gold;
+      font-size: 45px;
+    }
+    h2 {
+      color: aqua;
+    }
+    img {
+      border-radius: 20px;
+      border: 5px solid gold;
+      background: white;
+      width: 200px;
+    }
+    input {
+      padding: 6px;
+      font-size: 16px;
+      text-align: center;
+      border-radius: 6px;
+      border: none;
+      width: 150px;
+      margin: 5px;
+    }
+    button {
+      background: purple;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 18px;
+      border: none;
+      margin: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: magenta;
+    }
+    .card {
+      display: inline-block;
+      margin: 20px;
+      padding: 15px;
+      border-radius: 15px;
+      background: black;
+      width: 250px;
+    }
+    .log {
+      background: black;
+      margin: 20px auto;
+      padding: 15px;
+      border-radius: 15px;
+      width: 500px;
+      height: 150px;
+      overflow: auto;
+      text-align: center;
+    }
+    #battle {
+      display: none;
+    }
+  </style>
+ 
+</head>
+<body>
+  <h1>Creature Wars</h1>
+
+  <div id="setup">
+    <h2>Build Your Creature</h2>
+    <input id="nameBox" type="text" placeholder="Name Your Creature!" oninput="updatePreview()">
+    <p>Spend 100 Points</p>
+
+    <p>
+      Health:
+      <input id="healthBox" type="number" value="60" min="1">
+    </p>
+
+    <p>
+      Attack:
+      <input id="attackBox" type="number" value="25" min="1">
+    </p>
+
+    <p>
+      Healing:
+      <input id="healBox" type="number" value="15" min="1">
+    </p>
+
+    <img id="previewPic" src="https://robohash.org/1?set=set2&size=200x200">
+
+    <p>
+      <button onclick="rerollLook()">Different Look</button>
+    </p>
+
+    <button onclick="startBattle()">Start Battle!</button>
+
+    <p id="warning"></p>
+  </div>
+
+  <div id="battle">
+
+    <div class="card">
+      <h2 id="playerName">You</h2>
+      <img id="playerPic" src="">
+
+      <p>
+        Health:
+        <span id="playerHP">0</span>
+      </p>
+
+      <p>
+        Attack:
+        <span id="playerAtk">0</span>
+      </p>
+
+      <p>
+        Heal:
+        <span id="playerHeals">0</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 id="enemyName">Enemy</h2>
+      <img id="enemyPic" src="">
+
+      <p>
+        Health:
+        <span id="enemyHP">0</span>
+      </p>
+
+      <p>
+        Attack:
+        <span id="enemyAtk">0</span>
+      </p>
+
+      <p>
+        Heal:
+        <span id="enemyHeal">0</span>
+      </p>
+    </div>
+
+    <div>
+      <button onclick="playerAttack()">Attack!</button>
+      <button onclick="playerHeal()">Heal!</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <button onclick="newGame()">New Battle?</button>
+  </div>
+
+  <script>
+
+    let playerName = "";
+    let playerHP = 0;
+    let playerMaxHP = 0;
+    let playerHeals = 0;
+    let playerATK = 0;
+   
+    let enemyName = "";
+    let enemyHP = 0;
+    let enemyMaxHP = 0;
+    let enemyHeal = 0;
+    let enemyATK = 0;
+   
+    let gameOver = false;
+    let lookNumber = 1;
+
+    function playerPicture() {
+      let word = document.getElementById("nameBox").value;
+      return "https://robohash.org/" + word + lookNumber + "?set=set2&size=200x200";
+    }
+   
+    function updatePreview() {
+      document.getElementById("previewPic").src = playerPicture();
+    }
+
+    function rerollLook() {
+      lookNumber = lookNumber + 1;
+      updatePreview();
+    }
+
+    function startBattle() {
+      playerName = document.getElementById("nameBox").value;
+      playerHP = Number(document.getElementById("healthBox").value);
+      playerATK = Number(document.getElementById("attackBox").value);
+      playerHeals = Number(document.getElementById("healBox").value);
+
+      let total = playerHP + playerATK + playerHeals;
+
+      if (total > 100) {
+        document.getElementById("warning").innerHTML =
+          "No, no, no buckaroo! You used too many pionts! You used " +
+          total +
+          " outa one hundo!";
+        return;
+      }
+
+      if (playerName === "") {
+        document.getElementById("warning").innerHTML =
+          "Give your creature a name first!";
+        return;
+      }
+
+      playerMaxHP = playerHP;
+
+      makeEnemy();
+
+      document.getElementById("playerName").innerHTML = playerName;
+      document.getElementById("playerPic").src = playerPicture();
+
+      document.getElementById("enemyName").innerHTML = enemyName;
+      document.getElementById("enemyPic").src =
+        "https://robohash.org/" + enemyName + "?set=set2&size=200x200";
+
+      document.getElementById("setup").style.display = "none";
+      document.getElementById("battle").style.display = "block";
+
+      gameOver = false;
+
+      document.getElementById("log").innerHTML = "";
+
+      addLog(enemyName + " appears! The battle begins.");
+
+      updateStats();
+    }
+
+    function makeEnemy() {
+      enemyName = "Enemy" + Math.floor(Math.random() * 10000);
+      enemyHP = Math.floor(Math.random() * 31) + 40;
+      enemyATK = Math.floor(Math.random() * 16) + 10;
+      enemyHeal = 100 - enemyHP - enemyATK;
+      enemyMaxHP = enemyHP;
+    }
+
+    function updateStats() {
+      document.getElementById("playerHP").innerHTML =
+        playerHP + "/" + playerMaxHP;
+
+      document.getElementById("playerAtk").innerHTML = playerATK;
+      document.getElementById("playerHeals").innerHTML = playerHeals;
+
+      document.getElementById("enemyHP").innerHTML =
+        enemyHP + "/" + enemyMaxHP;
+
+      document.getElementById("enemyAtk").innerHTML = enemyATK;
+      document.getElementById("enemyHeal").innerHTML = enemyHeal;
+    }
+
+    function addLog(text) {
+      document.getElementById("log").innerHTML =
+        document.getElementById("log").innerHTML +
+        "<p>" + text + "</p>";
+    }
+
+    function playerAttack() {
+      if (gameOver) {
+        return;
+      }
+
+      enemyHP = enemyHP - playerATK;
+
+      addLog(playerName + " attacks for " + playerATK + " damage!");
+
+      checkWinner();
+
+      if (gameOver === false) {
+        enemyTurn();
+      }
+
+      updateStats();
+    }
+
+    function playerHeal() {
+      if (gameOver) {
+        return;
+      }
+
+      playerHP = playerHP + playerHeals;
+
+      if (playerHP > playerMaxHP) {
+        playerHP = playerMaxHP;
+      }
+
+      addLog(playerName + " heals for " + playerHeals + " health!");
+
+      enemyTurn();
+
+      updateStats();
+    }
+
+    function enemyTurn() {
+      let choice = Math.floor(Math.random() * 2);
+
+      if (choice === 0) {
+        playerHP = playerHP - enemyATK;
+
+        addLog(enemyName + " attacks for " + enemyATK + " damage!");
+      } else {
+        enemyHP = enemyHP + enemyHeal;
+
+        if (enemyHP > enemyMaxHP) {
+          enemyHP = enemyMaxHP;
+        }
+
+        addLog(enemyName + " heals for " + enemyHeal + " health!");
+      }
+
+      checkWinner();
+
+    }
+
+    function checkWinner() {
+      if (enemyHP <= 0) {
+        enemyHP = 0;
+        gameOver = true;
+        addLog(playerName + " WINS!");
+      }
+
+      if (playerHP <= 0) {
+        playerHP = 0;
+        gameOver = true;
+        addLog(enemyName + " WINS!");
+      }
+    }
+
+    function newGame() {
+      document.getElementById("setup").style.display = "block";
+      document.getElementById("battle").style.display = "none";
+      document.getElementById("warning").innerHTML = "";
+    }
+
+  </script>
+
+</body>
+</html>
